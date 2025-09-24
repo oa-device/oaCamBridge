@@ -1,0 +1,20 @@
+# oaCamBridge Configuration
+# Production-ready dual-output camera streaming configuration
+
+# Camera Settings
+camera_index: "0"          # Camera device index or path to video file (e.g., "sample.mp4" for testing)
+resolution: "1280x720"     # Video resolution
+fps: 10                    # Input frame rate from camera
+
+# Frame Output Settings
+frame_fps: 5               # Frame rate for detection images
+quality: 95                # WebP quality (0-100, higher = better quality)
+frame_dir: "/tmp/webcam"   # Directory to store detection frames
+
+# RTSP Stream Settings
+rtsp_port: 8554            # RTSP server port
+stream_name: "webcam"      # RTSP stream name
+
+# Performance Settings
+cleanup_interval: 60       # Cleanup check interval in seconds
+max_frames: 10000          # Maximum number of frames to keep

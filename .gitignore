@@ -1,0 +1,87 @@
+# MediaMTX binary and configuration
+./mediamtx
+mediamtx
+
+# Runtime files
+*.log
+nohup.out
+*.pid
+
+# Frame output directories
+/tmp/webcam/
+frames/
+*.webp
+*.jpg
+*.jpeg
+*.png
+
+# Configuration overrides
+config/local.yaml
+config/local.yml
+config/*.local.*
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Log directories
+logs/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# System files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Process files
+*.pid
+*.lock
+
+# FFmpeg temporary files
+ffmpeg2pass-*.log
