@@ -1,0 +1,11 @@
+{
+  "camera_index": "0",
+  "width": 1280,
+  "height": 720,
+  "fps": 10,
+  "frame_fps": 5,
+  "frame_dir": "/tmp/webcam",
+  "quality": 95,
+  "http_port": 8086,
+  "max_frames": 10000
+}

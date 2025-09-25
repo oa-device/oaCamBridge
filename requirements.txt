@@ -1,0 +1,2 @@
+# oaCamBridge Python Requirements
+opencv-python-headless>=4.8.0
