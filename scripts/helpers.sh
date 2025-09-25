@@ -32,6 +32,7 @@ load_config() {
     export FRAME_DIR=$(python3 -c "import json; print(json.load(open('$config_file'))['frame_dir'])" 2>/dev/null || echo "/tmp/webcam")
     export HTTP_PORT=$(python3 -c "import json; print(json.load(open('$config_file'))['http_port'])" 2>/dev/null || echo "8086")
     export QUALITY=$(python3 -c "import json; print(json.load(open('$config_file'))['quality'])" 2>/dev/null || echo "90")
+    export FORMAT=$(python3 -c "import json; print(json.load(open('$config_file')).get('format', 'webp'))" 2>/dev/null || echo "webp")
 
     echo -e "${BLUE}Configuration loaded from $config_file${NC}"
 }
@@ -43,7 +44,8 @@ show_config() {
     echo -e "  Resolution: ${WIDTH}x${HEIGHT} @ ${FPS}fps"
     echo -e "  Frame Capture: ${FRAME_FPS} FPS → $FRAME_DIR"
     echo -e "  HTTP Stream: http://localhost:${HTTP_PORT}/stream"
-    echo -e "  JPEG Quality: $QUALITY%"
+    echo -e "  Image Format: $FORMAT"
+    echo -e "  Quality: $QUALITY%"
 }
 
 # Check if Python and OpenCV are available
@@ -191,7 +193,7 @@ show_streamer_status() {
 
         # Show frame directory status
         if [ -d "$FRAME_DIR" ]; then
-            local frame_count=$(ls -1 "$FRAME_DIR"/*.webp 2>/dev/null | wc -l | tr -d ' ')
+            local frame_count=$(ls -1 "$FRAME_DIR"/*.$FORMAT 2>/dev/null | wc -l | tr -d ' ')
             local dir_size=$(du -sh "$FRAME_DIR" 2>/dev/null | cut -f1 || echo "unknown")
             echo -e "${BLUE}  Frames: $frame_count files, Directory size: $dir_size${NC}"
         fi
@@ -226,7 +228,7 @@ cleanup_frames() {
             rm -f "$file"
             ((deleted++))
         fi
-    done < <(find "$FRAME_DIR" -name "img_*.webp" -mmin +${retention_minutes} -print0 2>/dev/null)
+    done < <(find "$FRAME_DIR" -name "img_*.$FORMAT" -mmin +${retention_minutes} -print0 2>/dev/null)
 
     if [ $deleted -gt 0 ]; then
         echo -e "${GREEN}✓ Cleaned $deleted old frames${NC}"
