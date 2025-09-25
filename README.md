@@ -1,132 +1,226 @@
-# oaCamBridge - Production-Ready Camera Streaming
+# oaCamBridge
 
-A clean, lightweight dual-output camera streaming solution that captures from USB cameras and provides both RTSP streams and AI-ready detection frames.
-
-## Architecture
-
-```
-Camera → FFmpeg → [RTSP Stream + Detection Frames]
-```
+A lightweight Python-based camera streaming service that captures frames from camera devices and provides HTTP/MJPEG streaming. Designed for macOS with robust camera access handling and frame output for AI processing pipelines.
 
 ## Features
 
-✅ **Dual-Output Pipeline**: Single capture → RTSP stream + WebP frames
-✅ **Lightweight Repository**: No binaries stored in repo, dependencies installed on demand
-✅ **Smart Path Detection**: Automatically finds MediaMTX and FFmpeg in system PATH
-✅ **Cross-Platform Support**: macOS and Linux with platform-specific optimizations
-✅ **Production Ready**: Error handling, signal management, background cleanup
-✅ **Configurable**: YAML configuration with sensible defaults
+- **Direct Camera Access**: OpenCV-based camera capture with macOS permission handling
+- **HTTP/MJPEG Streaming**: Live video stream accessible via web browser
+- **Frame Capture**: Saves JPEG frames to disk at configurable intervals
+- **No Cleanup**: Stable version accumulates frames without automatic deletion
+- **macOS Optimized**: Multiple camera backend attempts for reliable macOS operation
+- **LaunchAgent Ready**: Service configuration for automatic startup
 
 ## Quick Start
 
-1. **Setup dependencies** (first time only):
-   ```bash
-   ./scripts/setup.sh
-   ```
+### 1. Installation
 
-2. **Configure** (optional):
-   ```bash
-   # Edit config.yaml for custom settings
-   nano config.yaml
-   ```
+```bash
+# Install dependencies
+./scripts/setup.sh
 
-3. **Start streaming**:
-   ```bash
-   ./start.sh
-   ```
+# Or manually:
+pip3 install opencv-python-headless
+```
 
-## Outputs
+### 2. Start Camera Streamer
 
-- **RTSP Stream**: `rtsp://localhost:8554/webcam`
-- **Detection Frames**: `/tmp/webcam/img_XXXXXX.webp` (5 FPS, 95% quality)
+```bash
+# Start with default configuration
+python3 camera_streamer.py --config config.json
+
+# Or use helpers
+source scripts/helpers.sh
+start_streamer
+```
+
+### 3. Access Stream
+
+- **Live Stream**: http://localhost:8086/stream
+- **Single Frame**: http://localhost:8086/frame
+- **Status JSON**: http://localhost:8086/status
+
+## Configuration
+
+Edit `config.json` to customize settings:
+
+```json
+{
+  "camera_index": "0",
+  "width": 1280,
+  "height": 720,
+  "fps": 10,
+  "frame_fps": 5,
+  "frame_dir": "/tmp/webcam",
+  "quality": 95,
+  "http_port": 8086
+}
+```
+
+## Camera Permissions (macOS)
+
+On first run, macOS will request camera permissions:
+
+1. **Via VNC/Direct Access**: Run in Terminal, click "OK" when permission dialog appears
+2. **Via SSH**: Camera permissions won't trigger - use VNC first
+3. **Manual Grant**: System Settings → Privacy & Security → Camera → Enable for Terminal
+
+### Troubleshooting Permissions
+
+```bash
+# Reset camera permissions
+tccutil reset Camera
+
+# Test camera access
+source scripts/helpers.sh
+test_camera_access
+```
+
+## Monitoring
+
+### Real-time Monitor
+```bash
+./monitor.sh
+```
+
+Shows:
+- Frame count and latest files
+- Directory size
+- Camera streamer status
+- Timestamp updates
+
+### Helper Functions
+```bash
+# Load helper functions
+source scripts/helpers.sh
+
+# Check status
+show_streamer_status
+
+# View configuration
+load_config config.json
+show_config
+
+# Manage service
+start_streamer
+stop_streamer
+restart_streamer
+```
+
+## Frame Management
+
+### Output Location
+Frames are saved to `/tmp/webcam/` as:
+```
+img_000001.jpg
+img_000002.jpg
+img_000003.jpg
+...
+```
+
+### Cleanup (Manual)
+```bash
+# Clean frames older than 60 minutes
+source scripts/helpers.sh
+cleanup_frames 60
+
+# Remove all frames
+rm -f /tmp/webcam/img_*.jpg
+```
+
+## LaunchAgent Setup
+
+For automatic startup on macOS:
+
+```bash
+# Install LaunchAgent (if available)
+cp com.orangead.cambridge.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.orangead.cambridge.plist
+```
+
+## HTTP API
+
+### Endpoints
+
+| Endpoint | Description | Response |
+|----------|-------------|----------|
+| `/stream` | MJPEG video stream | `multipart/x-mixed-replace` |
+| `/frame` | Single JPEG frame | `image/jpeg` |
+| `/status` | Service status | JSON with stats |
+
+### Status Response
+```json
+{
+  "running": true,
+  "frame_count": 1234,
+  "files_on_disk": 1234,
+  "frame_dir": "/tmp/webcam",
+  "config": { ... }
+}
+```
 
 ## Architecture
 
 ### Core Components
+- **camera_streamer.py**: Main streaming service
+- **CameraStreamer Class**: Handles capture, streaming, and frame saving
+- **ThreadedHTTPServer**: Concurrent HTTP request handling
+- **macOS Camera Detection**: Multiple backend fallback methods
 
-- **`start.sh`**: Main script containing core FFmpeg pipeline logic
-- **`scripts/helpers.sh`**: Utility functions for configuration and dependency checking
-- **`scripts/setup.sh`**: Lightweight dependency installer (FFmpeg, MediaMTX, netcat)
-- **`config.yaml`**: Configuration file with camera settings, output paths, and streaming parameters
-
-### Key Improvements
-
-1. **MediaMTX Path Resolution**: Automatically detects MediaMTX in multiple common locations:
-   - System PATH
-   - `/opt/homebrew/bin/mediamtx` (Homebrew on Apple Silicon)
-   - `/usr/local/bin/mediamtx` (Manual install)
-   - `./mediamtx` (Local binary fallback)
-
-2. **FFmpeg Path Detection**: Handles both standard and Homebrew FFmpeg installations
-
-3. **Dependency Management**: Smart installer that:
-   - Only installs what's missing
-   - Uses appropriate package managers (Homebrew on macOS, APT/YUM on Linux)
-   - Downloads binaries as fallback when package managers fail
-   - Keeps repository lightweight by avoiding binary storage
-
-4. **Production Features**:
-   - Background frame cleanup (maintains 10,000 latest frames)
-   - Proper signal handling for graceful shutdown
-   - Robust error handling with clear messages
-   - YAML configuration with comment support
-
-## Configuration
-
-Edit `config.yaml` to customize:
-
-```yaml
-# Camera Settings
-camera_index: "0"          # Camera device or video file path
-resolution: "1280x720"     # Video resolution
-fps: 10                    # Input frame rate
-
-# Frame Output Settings
-frame_fps: 5               # Detection frame rate
-quality: 95                # WebP quality (0-100)
-frame_dir: "/tmp/webcam"   # Detection frames directory
-
-# RTSP Stream Settings
-rtsp_port: 8554           # RTSP server port
-stream_name: "webcam"     # RTSP stream name
-```
-
-## Dependencies
-
-- **FFmpeg**: Video processing and camera capture
-- **MediaMTX v1.15.0**: RTSP streaming server
-- **netcat**: Network connectivity testing
-
-All dependencies are automatically installed by `scripts/setup.sh`.
-
-## Platform Support
-
-- **macOS**: Uses AVFoundation for camera access, Homebrew for dependencies
-- **Linux**: Uses Video4Linux, APT/YUM for dependencies
-- **Architecture**: Supports both Intel and ARM processors
-
-## Stopping
-
-Press `Ctrl+C` to stop the streaming. The cleanup handler will:
-- Stop MediaMTX and FFmpeg processes
-- Clean up background tasks
-- Provide clean shutdown confirmation
+### Design Principles
+- **Stability Over Features**: No automatic cleanup to prevent frame loss
+- **Simple Dependencies**: Only OpenCV required
+- **Platform Awareness**: macOS-specific camera handling
+- **AI Pipeline Ready**: Frame output optimized for processing
 
 ## Troubleshooting
 
-### MediaMTX Not Found
-```bash
-Error: MediaMTX not found. Run './scripts/setup.sh' to install dependencies.
-```
-**Solution**: Run `./scripts/setup.sh` to install MediaMTX
+### Common Issues
 
-### FFmpeg Not Found
+**Camera not detected**:
 ```bash
-Error: ffmpeg not found
+# Check available cameras
+python3 -c "import cv2; [print(f'Camera {i}: {cv2.VideoCapture(i).isOpened()}') for i in range(5)]"
 ```
-**Solution**: Run `./scripts/setup.sh` to install FFmpeg
 
-### Camera Access Issues
-- Check camera permissions on macOS (System Preferences → Security & Privacy → Camera)
-- Verify camera device index with: `ffmpeg -f avfoundation -list_devices true -i ""`
-- Try different `camera_index` values in config.yaml
+**Permission denied**:
+- Run via VNC/Terminal (not SSH) to trigger permission dialog
+- Check System Settings → Privacy & Security → Camera
+
+**Port already in use**:
+```bash
+# Check what's using the port
+lsof -i :8086
+
+# Or change port in config.json
+```
+
+**Frames not saving**:
+```bash
+# Check frame directory
+ls -la /tmp/webcam/
+
+# Check process is running
+pgrep -f camera_streamer.py
+```
+
+### Logs
+Service logs are written to stdout. For LaunchAgent, check:
+```bash
+tail -f ~/Library/Logs/com.orangead.cambridge/camera_streamer.log
+```
+
+## Requirements
+
+- **Python 3.8+**
+- **OpenCV (opencv-python-headless)**
+- **macOS** (optimized, other platforms may work)
+- **Camera device** (USB/built-in)
+
+## License
+
+[License file](LICENSE)
+
+---
+
+**Note**: This is the stable version focused on reliability. No automatic frame cleanup is performed to ensure no data loss for downstream AI processing.
