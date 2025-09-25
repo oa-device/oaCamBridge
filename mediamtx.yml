@@ -128,7 +128,7 @@ authJWTJWKS:
 # validate it anyway. It can be obtained by running:
 # openssl s_client -connect jwt_jwks_domain:443 </dev/null 2>/dev/null | sed -n '/BEGIN/,/END/p' > server.crt
 # openssl x509 -in server.crt -noout -fingerprint -sha256 | cut -d "=" -f2 | tr -d ':'
-authJWTJWKSFingerprint:
+# authJWTJWKSFingerprint:  # Removed - unsupported in this MediaMTX version
 # name of the claim that contains permissions.
 authJWTClaimKey: mediamtx_permissions
 # Actions to exclude from JWT-based authentication.
@@ -241,7 +241,7 @@ rtsp: yes
 # UDP-multicast allows to save bandwidth when clients are all in the same LAN.
 # TCP is the most versatile.
 # The handshake is always performed with TCP.
-rtspTransports: [udp, multicast, tcp]
+rtspTransports: [tcp]  # Simplified for maximum compatibility
 # Use secure protocol variants (RTSPS, TLS, SRTP).
 # Available values are "no", "strict", "optional".
 rtspEncryption: "no"
@@ -264,9 +264,9 @@ srtpAddress: :8004
 # Address of the UDP/SRTCP listener. This is needed only when "udp" is in rtspTransports and encryption is enabled.
 srtcpAddress: :8005
 # Port of all UDP-multicast/SRTP listeners. This is needed only when "multicast" is in rtspTransports and encryption is enabled.
-multicastSRTPPort: 8006
+# multicastSRTPPort: 8006  # Removed - unsupported in this MediaMTX version
 # Port of all UDP-multicast/SRTCP listeners. This is needed only when "multicast" is in rtspTransports and encryption is enabled.
-multicastSRTCPPort: 8007
+# multicastSRTCPPort: 8007  # Removed - unsupported in this MediaMTX version
 # Path to the server key. This is needed only when encryption is "strict" or "optional".
 # This can be generated with:
 # openssl genrsa -out server.key 2048
