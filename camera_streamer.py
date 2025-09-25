@@ -157,23 +157,36 @@ class CameraStreamer:
             # Small delay to prevent CPU overload
             time.sleep(0.001)
 
+    def get_file_pattern(self):
+        """Get file glob pattern based on configured format"""
+        format_type = self.config.get('format', 'webp').lower()
+        return f"img_*.{format_type}"
+
     def save_frame(self, frame):
-        """Save frame to disk as JPEG (more compatible)"""
+        """Save frame to disk in configurable format (JPG/WebP)"""
         self.frame_counter += 1
 
-        # Use WebP for better compression efficiency
-        filename = f"img_{self.frame_counter:06d}.webp"
+        # Get format from config (webp or jpg)
+        format_type = self.config.get('format', 'webp').lower()
+
+        if format_type == 'webp':
+            filename = f"img_{self.frame_counter:06d}.webp"
+            codec_setting = [cv2.IMWRITE_WEBP_QUALITY, self.config.get('quality', 95)]
+        else:  # Default to JPG for compatibility
+            filename = f"img_{self.frame_counter:06d}.jpg"
+            codec_setting = [cv2.IMWRITE_JPEG_QUALITY, self.config.get('quality', 95)]
+
         filepath = os.path.join(self.config['frame_dir'], filename)
 
-        # Save as WebP with 95% quality for optimal compression
-        success = cv2.imwrite(filepath, frame, [cv2.IMWRITE_WEBP_QUALITY, 95])
+        # Save frame with selected format and quality
+        success = cv2.imwrite(filepath, frame, codec_setting)
 
         if success:
             if self.frame_counter == 1:
                 logger.info(f"✓ First frame saved: {filepath}")
             elif self.frame_counter % 50 == 0:
                 # Check actual files in directory
-                files = list(Path(self.config['frame_dir']).glob('img_*.webp'))
+                files = list(Path(self.config['frame_dir']).glob(self.get_file_pattern()))
                 logger.info(f"✓ Frame {self.frame_counter} saved. Total files on disk: {len(files)}")
         else:
             logger.error(f"✗ Failed to save frame {self.frame_counter}")
@@ -198,7 +211,7 @@ class CameraStreamer:
         logger.info("Camera capture stopped")
 
         # Final report
-        files = list(Path(self.config['frame_dir']).glob('img_*.webp'))
+        files = list(Path(self.config['frame_dir']).glob(self.get_file_pattern()))
         logger.info(f"Final: {self.frame_counter} frames captured, {len(files)} files on disk")
 
 
@@ -249,7 +262,7 @@ class StreamingHandler(BaseHTTPRequestHandler):
     def send_status(self):
         """Send service status as JSON"""
         # Count actual files
-        files = list(Path(self.server.camera_streamer.config['frame_dir']).glob('img_*.webp'))
+        files = list(Path(self.server.camera_streamer.config['frame_dir']).glob(self.server.camera_streamer.get_file_pattern()))
 
         status = {
             'running': self.server.camera_streamer.running,
@@ -286,6 +299,7 @@ def load_config(config_file=None):
         'fps': 10,
         'frame_fps': 5,
         'frame_dir': '/tmp/webcam',
+        'format': 'webp',
         'quality': 90,
         'http_port': 8086,
         'max_frames': 10000  # Not used in stable version
@@ -351,7 +365,7 @@ def main():
     logger.info(f"✓ MJPEG stream: http://localhost:{config['http_port']}/stream")
     logger.info(f"✓ Status: http://localhost:{config['http_port']}/status")
     logger.info(f"✓ Frame output: {config['frame_dir']}/")
-    logger.info("✓ Frames saved as JPEG for compatibility")
+    logger.info(f"✓ Frames saved as {config['format'].upper()} format")
 
     # Handle signals
     def signal_handler(sig, frame):
