@@ -191,7 +191,7 @@ show_streamer_status() {
 
         # Show frame directory status
         if [ -d "$FRAME_DIR" ]; then
-            local frame_count=$(ls -1 "$FRAME_DIR"/*.jpg 2>/dev/null | wc -l | tr -d ' ')
+            local frame_count=$(ls -1 "$FRAME_DIR"/*.webp 2>/dev/null | wc -l | tr -d ' ')
             local dir_size=$(du -sh "$FRAME_DIR" 2>/dev/null | cut -f1 || echo "unknown")
             echo -e "${BLUE}  Frames: $frame_count files, Directory size: $dir_size${NC}"
         fi
@@ -226,7 +226,7 @@ cleanup_frames() {
             rm -f "$file"
             ((deleted++))
         fi
-    done < <(find "$FRAME_DIR" -name "img_*.jpg" -mmin +${retention_minutes} -print0 2>/dev/null)
+    done < <(find "$FRAME_DIR" -name "img_*.webp" -mmin +${retention_minutes} -print0 2>/dev/null)
 
     if [ $deleted -gt 0 ]; then
         echo -e "${GREEN}✓ Cleaned $deleted old frames${NC}"

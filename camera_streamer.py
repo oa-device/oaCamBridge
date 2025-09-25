@@ -161,19 +161,19 @@ class CameraStreamer:
         """Save frame to disk as JPEG (more compatible)"""
         self.frame_counter += 1
 
-        # Use JPEG for better compatibility
-        filename = f"img_{self.frame_counter:06d}.jpg"
+        # Use WebP for better compression efficiency
+        filename = f"img_{self.frame_counter:06d}.webp"
         filepath = os.path.join(self.config['frame_dir'], filename)
 
-        # Save as JPEG
-        success = cv2.imwrite(filepath, frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
+        # Save as WebP with 95% quality for optimal compression
+        success = cv2.imwrite(filepath, frame, [cv2.IMWRITE_WEBP_QUALITY, 95])
 
         if success:
             if self.frame_counter == 1:
                 logger.info(f"✓ First frame saved: {filepath}")
             elif self.frame_counter % 50 == 0:
                 # Check actual files in directory
-                files = list(Path(self.config['frame_dir']).glob('img_*.jpg'))
+                files = list(Path(self.config['frame_dir']).glob('img_*.webp'))
                 logger.info(f"✓ Frame {self.frame_counter} saved. Total files on disk: {len(files)}")
         else:
             logger.error(f"✗ Failed to save frame {self.frame_counter}")
@@ -198,7 +198,7 @@ class CameraStreamer:
         logger.info("Camera capture stopped")
 
         # Final report
-        files = list(Path(self.config['frame_dir']).glob('img_*.jpg'))
+        files = list(Path(self.config['frame_dir']).glob('img_*.webp'))
         logger.info(f"Final: {self.frame_counter} frames captured, {len(files)} files on disk")
 
 
@@ -249,7 +249,7 @@ class StreamingHandler(BaseHTTPRequestHandler):
     def send_status(self):
         """Send service status as JSON"""
         # Count actual files
-        files = list(Path(self.server.camera_streamer.config['frame_dir']).glob('img_*.jpg'))
+        files = list(Path(self.server.camera_streamer.config['frame_dir']).glob('img_*.webp'))
 
         status = {
             'running': self.server.camera_streamer.running,
